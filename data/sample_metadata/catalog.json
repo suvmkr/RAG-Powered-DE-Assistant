@@ -1,0 +1,302 @@
+[
+  {
+    "table_name": "user_events_clean",
+    "database": "analytics",
+    "schema": "events",
+    "description": "Deduplicated and validated user click-stream events. Source: Kafka raw.user_events.",
+    "owner": "alice@company.com",
+    "tags": [
+      "core",
+      "events",
+      "streaming"
+    ],
+    "row_count": 4500000000,
+    "last_updated": "2024-01-15T04:12:00Z",
+    "has_pii": true,
+    "upstream": [
+      "kafka.raw.user_events"
+    ],
+    "downstream": [
+      "sessions",
+      "funnel_analysis",
+      "user_profile"
+    ],
+    "columns": [
+      {
+        "name": "event_id",
+        "type": "STRING",
+        "description": "Unique event identifier",
+        "is_pii": false
+      },
+      {
+        "name": "user_id",
+        "type": "STRING",
+        "description": "Hashed user identifier",
+        "is_pii": false
+      },
+      {
+        "name": "session_id",
+        "type": "STRING",
+        "description": "Browser session ID",
+        "is_pii": false
+      },
+      {
+        "name": "event_type",
+        "type": "STRING",
+        "description": "click|view|purchase|search",
+        "is_pii": false
+      },
+      {
+        "name": "timestamp",
+        "type": "TIMESTAMP",
+        "description": "Event time (UTC)",
+        "is_pii": false
+      },
+      {
+        "name": "ip_address",
+        "type": "STRING",
+        "description": "User IP (masked to /24)",
+        "is_pii": true
+      },
+      {
+        "name": "user_agent",
+        "type": "STRING",
+        "description": "Browser user agent string",
+        "is_pii": true
+      },
+      {
+        "name": "page_url",
+        "type": "STRING",
+        "description": "Page URL at time of event",
+        "is_pii": false
+      },
+      {
+        "name": "event_date",
+        "type": "DATE",
+        "description": "Partition column (UTC date)",
+        "is_pii": false
+      }
+    ]
+  },
+  {
+    "table_name": "orders_fact",
+    "database": "warehouse",
+    "schema": "commerce",
+    "description": "Orders fact table. Dimensional model. Includes PII-masked customer fields. Late-arriving data up to 3 days.",
+    "owner": "bob@company.com",
+    "tags": [
+      "finance",
+      "orders",
+      "fact_table"
+    ],
+    "row_count": 280000000,
+    "last_updated": "2024-01-15T06:05:00Z",
+    "has_pii": true,
+    "upstream": [
+      "postgres.orders_raw",
+      "postgres.customers"
+    ],
+    "downstream": [
+      "revenue_daily",
+      "customer_ltv",
+      "finance_reports"
+    ],
+    "columns": [
+      {
+        "name": "order_id",
+        "type": "STRING",
+        "description": "Unique order ID",
+        "is_pii": false
+      },
+      {
+        "name": "order_date",
+        "type": "DATE",
+        "description": "Order placement date",
+        "is_pii": false
+      },
+      {
+        "name": "customer_id",
+        "type": "STRING",
+        "description": "Hashed customer ID",
+        "is_pii": false
+      },
+      {
+        "name": "customer_email",
+        "type": "STRING",
+        "description": "SHA-256 hashed email",
+        "is_pii": true
+      },
+      {
+        "name": "product_id",
+        "type": "STRING",
+        "description": "Product SKU",
+        "is_pii": false
+      },
+      {
+        "name": "total_amount",
+        "type": "DOUBLE",
+        "description": "Order total in USD",
+        "is_pii": false
+      },
+      {
+        "name": "order_count",
+        "type": "BIGINT",
+        "description": "Number of line items",
+        "is_pii": false
+      },
+      {
+        "name": "currency",
+        "type": "STRING",
+        "description": "ISO currency code",
+        "is_pii": false
+      },
+      {
+        "name": "billing_address",
+        "type": "STRING",
+        "description": "Encrypted billing address",
+        "is_pii": true
+      }
+    ]
+  },
+  {
+    "table_name": "product_catalog",
+    "database": "analytics",
+    "schema": "commerce",
+    "description": "Product master data including descriptions, categories, pricing tiers, and inventory levels.",
+    "owner": "charlie@company.com",
+    "tags": [
+      "products",
+      "catalog",
+      "reference"
+    ],
+    "row_count": 150000,
+    "last_updated": "2024-01-15T12:00:00Z",
+    "has_pii": false,
+    "upstream": [
+      "catalog_service.api",
+      "inventory_service.api"
+    ],
+    "downstream": [
+      "orders_fact",
+      "recommendations",
+      "search_index"
+    ],
+    "columns": [
+      {
+        "name": "product_id",
+        "type": "STRING",
+        "description": "Unique product SKU",
+        "is_pii": false
+      },
+      {
+        "name": "product_name",
+        "type": "STRING",
+        "description": "Display name",
+        "is_pii": false
+      },
+      {
+        "name": "category_l1",
+        "type": "STRING",
+        "description": "Top-level category",
+        "is_pii": false
+      },
+      {
+        "name": "category_l2",
+        "type": "STRING",
+        "description": "Sub-category",
+        "is_pii": false
+      },
+      {
+        "name": "base_price_usd",
+        "type": "DOUBLE",
+        "description": "Base price before discounts",
+        "is_pii": false
+      },
+      {
+        "name": "stock_quantity",
+        "type": "INTEGER",
+        "description": "Current inventory",
+        "is_pii": false
+      },
+      {
+        "name": "is_active",
+        "type": "BOOLEAN",
+        "description": "Whether product is live",
+        "is_pii": false
+      }
+    ]
+  },
+  {
+    "table_name": "sessions",
+    "database": "analytics",
+    "schema": "events",
+    "description": "Aggregated user sessions derived from user_events_clean. One row per session.",
+    "owner": "diana@company.com",
+    "tags": [
+      "sessions",
+      "derived",
+      "analytics"
+    ],
+    "row_count": 800000000,
+    "last_updated": "2024-01-15T05:30:00Z",
+    "has_pii": false,
+    "upstream": [
+      "user_events_clean"
+    ],
+    "downstream": [
+      "funnel_analysis",
+      "retention",
+      "ab_testing"
+    ],
+    "columns": [
+      {
+        "name": "session_id",
+        "type": "STRING",
+        "description": "Unique session ID",
+        "is_pii": false
+      },
+      {
+        "name": "user_id",
+        "type": "STRING",
+        "description": "Hashed user ID",
+        "is_pii": false
+      },
+      {
+        "name": "session_start",
+        "type": "TIMESTAMP",
+        "description": "Session start UTC",
+        "is_pii": false
+      },
+      {
+        "name": "session_end",
+        "type": "TIMESTAMP",
+        "description": "Session end UTC",
+        "is_pii": false
+      },
+      {
+        "name": "duration_seconds",
+        "type": "INTEGER",
+        "description": "Session length in seconds",
+        "is_pii": false
+      },
+      {
+        "name": "page_views",
+        "type": "INTEGER",
+        "description": "Number of page views",
+        "is_pii": false
+      },
+      {
+        "name": "events",
+        "type": "INTEGER",
+        "description": "Total event count",
+        "is_pii": false
+      },
+      {
+        "name": "converted",
+        "type": "BOOLEAN",
+        "description": "Did session result in purchase",
+        "is_pii": false
+      }
+    ]
+  }
+]
