@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Env
+.env
+
+# ChromaDB
+chroma/
+data/chroma_db/
+
+# Streamlit
+.streamlit/
+
+# Mac
+.DS_Store
+
+# Logs
+*.log
+data/failure_logs.json
+
+# IDE
+.vscode/
+.idea/
